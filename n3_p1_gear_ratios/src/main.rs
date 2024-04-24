@@ -10,9 +10,7 @@ fn read_file_input(path: &str) -> String {
 
 fn main() {
     let content = read_file_input("./src/input.txt");
-    let symbol_list = ["*"
-    // , "-", "+", "/", "%", "="
-    ];
+    let symbol_list = ["!", "@", "#", "$", "%", "^", "&", "*", "-", "+", "/", "%", "="];
     let mut symbol_pos: HashMap<i32, Vec<i32>> = HashMap::new();
     let mut num_pos: HashMap<i32, Vec<HashMap<i32, String>>> = HashMap::new();
     let mut line_count = 0;
@@ -69,13 +67,60 @@ fn main() {
         line_count += 1;
     }
 
-    
+    // println!("{:?}", symbol_pos);
+    // println!("{:?}", num_pos);
 
     let mut final_num_list = Vec::new();
 
     for i in 0..content.lines().count() {
-        
+        let iteration = i.to_string().parse::<i32>().unwrap();
+        let num_positions = num_pos.get(&iteration).unwrap_or(&Vec::new()).clone();
+
+        for num_list in num_positions {
+            for (num, pos_chars) in num_list {
+                let pos_list = pos_chars.split(",").collect::<Vec<&str>>();
+                let pos = pos_list[0].parse::<i32>().unwrap();
+                let pad = pos_list[1].parse::<i32>().unwrap();
+
+                for j in -1..pad + 2 {
+                    if symbol_pos
+                        .get(&iteration)
+                        .unwrap_or(&Vec::new())
+                        .clone()
+                        .contains(&(pos + j))
+                    {
+                        final_num_list.push(num);
+                    }
+                }
+
+                if i != 0 {
+                    for j in -1..pad + 2 {
+                        if symbol_pos
+                            .get(&(iteration - 1))
+                            .unwrap_or(&Vec::new())
+                            .clone()
+                            .contains(&(pos + j))
+                        {
+                            final_num_list.push(num);
+                        }
+                    }
+                }
+
+                if i != content.lines().count() - 1 {
+                    for j in -1..pad + 2 {
+                        if symbol_pos
+                            .get(&(iteration + 1))
+                            .unwrap_or(&Vec::new())
+                            .clone()
+                            .contains(&(pos + j))
+                        {
+                            final_num_list.push(num);
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // println!("{:?}", final_num_list.iter().sum::<i32>());
+    println!("{:?}", final_num_list.iter().sum::<i32>());
 }
