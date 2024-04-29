@@ -1,6 +1,15 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
+use regex::Regex;
+
+fn usize_to_i32(num: usize) -> i32 {
+    return num.to_string().parse::<i32>().unwrap();
+}
+
+fn str_to_i32(num: &str) -> i32 {
+    return num.parse::<i32>().unwrap();
+}
 
 fn read_file_input(path: &str) -> String {
     let content = fs::read_to_string(Path::new(path)).expect("Error reading file");
@@ -8,74 +17,103 @@ fn read_file_input(path: &str) -> String {
     return content;
 }
 
+fn extract_number_position_range(content: &str, i: usize, num_list: &mut Vec<(Vec<i32>, i32)>) {
+    let re2 = Regex::new(r"[0-9]+").unwrap();
+
+    re2.find_iter(&content.lines().into_iter().nth(i).unwrap())
+        .collect::<Vec<_>>()
+        .into_iter()
+        .map(|x| (x.start(), x.end(), str_to_i32(x.as_str())))
+        .for_each(|(start, end, val)| {
+            num_list.push((
+                ((usize_to_i32(start))..(usize_to_i32(end) + 2))
+                    .into_iter()
+                    .collect::<Vec<i32>>(),
+                val,
+            ));
+            // print!(
+            //     "{} -> {:?} -> {:?} \t",
+            //     val,
+            //     ((usize_to_i32(start))..(usize_to_i32(end) + 2))
+            //         .into_iter()
+            //         .collect::<Vec<i32>>(),
+            //     (start, end, val)
+            // );
+        });
+    // println!("");
+}
+
 fn main() {
     let content = read_file_input("./src/input.txt");
-    let symbol_list = ["*"
-    // , "-", "+", "/", "%", "="
-    ];
-    let mut symbol_pos: HashMap<i32, Vec<i32>> = HashMap::new();
-    let mut num_pos: HashMap<i32, Vec<HashMap<i32, String>>> = HashMap::new();
-    let mut line_count = 0;
+    let re = Regex::new(r"[0-9]+[*][0-9]+").unwrap();
+    let re3 = Regex::new(r"[0-9]{0}[*][0-9]{0}").unwrap();
+    let mut final_list: Vec<i32> = vec![];
+    let mut final_list_test: Vec<(i32, i32)> = vec![];
+    let matches = re.find_iter(&content).collect::<Vec<_>>();
 
-    for line in content.lines() {
-        let mut internal_count = 0;
-        let mut num_list = Vec::new();
-        let mut num_pos_list = Vec::<HashMap<i32, String>>::new();
-        let mut is_num_found = false;
+    for m in matches {
+        let sample = m.as_str().split("*").collect::<Vec<&str>>();
 
-        for i in line.chars() {
-            if symbol_list.contains(&i.to_string().as_str()) {
-                num_list.push(internal_count);
-                symbol_pos.insert(line_count, num_list.clone());
-                is_num_found = false;
-            }
+        final_list.push(str_to_i32(sample[0]) * str_to_i32(sample[1]));
+    }
 
-            if !symbol_list.contains(&i.to_string().as_str()) && !i.is_numeric() {
-                is_num_found = false;
-            }
-
-            if i.is_numeric() && !is_num_found {
-                let mut ic = internal_count + 1;
-                let mut num = Vec::from([i]);
-
-                loop {
-                    let ch = line
-                        .chars()
-                        .nth(ic as usize)
-                        .unwrap_or(" ".chars().next().unwrap());
-                    if ch.is_numeric() {
-                        num.push(ch);
-                        is_num_found = true;
-                    } else {
-                        break;
-                    }
-                    ic += 1;
-                }
-
-                let mut num_pos_map = HashMap::new();
-                num_pos_map.insert(
-                    num.iter().collect::<String>().parse::<i32>().unwrap(),
-                    internal_count.to_string()
-                        + ","
-                        + (ic - internal_count - 1).to_string().as_str(),
-                );
-                num_pos_list.push(num_pos_map);
-            }
-
-            num_pos.insert(line_count, num_pos_list.clone());
-            internal_count += 1;
+    for i in 0..content.lines().count() - 1 {
+        if i == 0 {
+            continue;
         }
+        let mut num_list_1: Vec<(Vec<i32>, i32)> = vec![];
+        let mut num_list_2: Vec<(Vec<i32>, i32)> = vec![];
 
-        line_count += 1;
+        let symbol_list = re3
+            .find_iter(&content.lines().into_iter().nth(i).unwrap())
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(|x| return x.end())
+            .collect::<Vec<_>>();
+
+        extract_number_position_range(&content, i - 1, &mut num_list_1);
+        extract_number_position_range(&content, i + 1, &mut num_list_2);
+
+        // println!("{:?}", symbol_list);
+
+        // break;
+
+        for s in symbol_list.clone() {
+            let mut found_1: &(Vec<i32>, i32) = &(Vec::new(), 0);
+            let mut found_2: &(Vec<i32>, i32) = &(Vec::new(), 0);
+
+            for i in &num_list_1 {
+                if i.0.contains(&usize_to_i32(s)) {
+                    found_1 = i;
+                    break;
+                }
+            }
+
+            for i in &num_list_2 {
+                if i.0.contains(&usize_to_i32(s)) {
+                    found_2 = i;
+                    break;
+                }
+            }
+
+            if found_1.1 > 0 && found_2.1 > 0 {
+                final_list.push(found_1.1 * found_2.1);
+                // print!("{:?} * {:?}\t", found_1.1, found_2.1);
+                final_list_test.push((found_1.1, found_2.1));
+                // print!("{} * {}\t", found_1.1, found_2.1);
+            }
+        }
+        println!("");
+
+        // println!("num_list_1: {:?} +++++++++ ", num_list_1);
+        // println!("symbol_list: {:?} +++++++++ ", symbol_list);
+        // println!("num_list_2: {:?} +++++++++ ", num_list_2);
+        // println!(
+        //     "==================================================================================\n"
+        // );
     }
 
-    
-
-    let mut final_num_list = Vec::new();
-
-    for i in 0..content.lines().count() {
-        
-    }
-
-    // println!("{:?}", final_num_list.iter().sum::<i32>());
+    // println!("{:?}", final_list_test);
+    // println!("{:?}", final_list);
+    println!("\n{:?}", final_list.iter().sum::<i32>());
 }
