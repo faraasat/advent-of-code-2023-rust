@@ -18,8 +18,14 @@ fn main() {
         let card = (line.split(": ").collect::<Vec<_>>()[1])
             .split(" | ")
             .collect::<Vec<_>>();
-        let winning_numbers = re.split(card[0]).filter(|x| !x.is_empty()).collect::<Vec<_>>();
-        let your_numbers = re.split(card[1]).filter(|x| !x.is_empty()).collect::<Vec<_>>();
+        let winning_numbers = re
+            .split(card[0])
+            .filter(|x| !x.is_empty())
+            .collect::<Vec<_>>();
+        let your_numbers = re
+            .split(card[1])
+            .filter(|x| !x.is_empty())
+            .collect::<Vec<_>>();
         let intersection: HashSet<_> = winning_numbers
             .clone()
             .into_iter()
