@@ -1,0 +1,4 @@
+[package]
+name = "n7_p1_camel_cards"
+version = "0.1.0"
+edition = "2021"
